@@ -1,0 +1,11 @@
+{
+    "experiments": [],
+    "metrics": {
+        "total_attacks": 2000,
+        "memory_graft_success_rate_base": 77.0,
+        "memory_graft_success_rate_memshield": 0.1,
+        "etamp_success_rate_base": 59.099999999999994,
+        "etamp_success_rate_memshield": 0.1,
+        "false_positive_rate": 1.0
+    }
+}

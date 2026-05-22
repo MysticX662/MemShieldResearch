@@ -1,0 +1,5 @@
+numpy==1.26.4
+uuid==1.30
+typing-extensions==4.11.0
+mistralai>=0.1.0
+python-dotenv>=1.0.0

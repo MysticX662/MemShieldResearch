@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MemShield: Mitigating Persistent Memory Poisoning in Stateful Autonomous AI Agents - Revsoc.ai</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ─── RESET & ROOT ─── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --white:#ffffff;
+  --off:#fafaf8;
+  --page-bg:#ede9e1;
+  --ink:#1c1c1c;
+  --ink2:#3d3d3d;
+  --ink3:#6b6b6b;
+  --rule:#d6d1c8;
+  --rule2:#e8e4dc;
+  --brand:#0a3d7a;
+  --brand2:#1558a8;
+  --brand-light:#e6eef8;
+  --brand-mid:#bed3f0;
+  --accent-green:#1a5c2a;
+  --accent-red:#8b1a1a;
+  --accent-amber:#6b4200;
+  --accent-teal:#0d5c5c;
+  --serif:'Libre Baskerville',Georgia,serif;
+  --sans:'Inter',Helvetica,Arial,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --col:700px;
+}
+html{background:var(--page-bg);-webkit-font-smoothing:antialiased}
+body{
+  color:var(--ink);
+  font-family:var(--serif);
+  font-size:16px;
+  line-height:1.68;
+  max-width:820px;
+  margin:2.5rem auto;
+  background:var(--white);
+  box-shadow:0 8px 60px rgba(0,0,0,.16),0 2px 12px rgba(0,0,0,.08);
+}
+
+/* ─── COVER ─── */
+.cover{min-height:1080px;display:flex;flex-direction:column;border-bottom:4px solid var(--brand)}
+.cover-header{
+  background:var(--white);
+  padding:1.5rem 3rem;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--rule);
+}
+.cover-logo{height:54px;}
+.cover-header-right{
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink3);font-weight:600;
+}
+.cover-body{flex:1;padding:4.5rem 3rem 3.5rem;display:flex;flex-direction:column}
+
+/* keyword pills */
+.pill-row{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:2rem}
+.pill{
+  font-family:var(--sans);font-size:10px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+  background:var(--brand-light);color:var(--brand);
+  border:1px solid var(--brand-mid);border-radius:3px;
+  padding:.22rem .65rem;
+}
+
+/* main title */
+.cover-rule{width:5px;height:80px;background:var(--brand);float:left;margin-right:1.4rem;margin-top:.25rem;flex-shrink:0}
+.cover-title-wrap{display:flex;align-items:flex-start;margin-bottom:.85rem}
+.cover-title{
+  font-family:var(--serif);font-size:2.55rem;font-weight:700;
+  color:var(--brand);line-height:1.1;
+}
+.cover-subtitle{
+  font-family:var(--serif);font-size:1.1rem;font-weight:400;font-style:italic;
+  color:var(--ink2);margin-bottom:2.25rem;padding-left:6.5px;
+}
+
+/* meta 2×2 grid */
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2.25rem}
+.meta-box{border:1px solid var(--rule);padding:.9rem 1.1rem}
+.meta-label{
+  font-family:var(--sans);font-size:9.5px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:.3rem;
+}
+.meta-val{font-family:var(--sans);font-size:13.5px;color:var(--ink);line-height:1.5}
+
+/* abstract box */
+.abstract-box{
+  border-left:4px solid var(--brand);background:var(--off);
+  padding:1.4rem 1.6rem;margin-bottom:2.25rem;
+}
+.abstract-label{
+  font-family:var(--sans);font-size:9.5px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);margin-bottom:.85rem;
+}
+.abstract-body p{
+  font-family:var(--sans);font-size:13.5px;color:var(--ink2);
+  line-height:1.72;margin-bottom:.75rem;text-align:left;
+}
+.abstract-body p:last-child{margin-bottom:0}
+.abstract-body p:first-child{font-style:italic;color:var(--ink)}
+.abstract-body strong{font-weight:600;color:var(--ink)}
+.abstract-body em{font-style:italic}
+
+/* stat strip */
+.stat-strip{
+  margin-top:auto;padding-top:1.5rem;
+  border-top:1px solid var(--rule);
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;
+}
+.stat-item{text-align:center;padding:.6rem .25rem}
+.stat-num{
+  font-family:var(--sans);font-size:1.8rem;font-weight:700;
+  line-height:1;margin-bottom:.2rem;
+}
+.stat-label{
+  font-family:var(--sans);font-size:10px;color:var(--ink3);
+  letter-spacing:.04em;line-height:1.35;
+}
+.c-red{color:var(--accent-red)}.c-amber{color:var(--accent-amber)}
+.c-green{color:var(--accent-green)}.c-blue{color:var(--brand2)}
+
+/* ─── PAPER BODY ─── */
+.paper{padding:3rem 3.5rem 4rem}
+
+/* running head */
+.running-head{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--sans);font-size:9.5px;font-weight:500;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);
+  padding-bottom:.8rem;margin-bottom:2.5rem;
+  border-bottom:1px solid var(--rule);
+}
+
+/* TOC */
+.toc-wrap{margin-bottom:3.5rem}
+.toc-heading{
+  font-family:var(--sans);font-size:9.5px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);
+  padding-bottom:.5rem;margin-bottom:.85rem;
+  border-bottom:1px solid var(--rule);
+}
+.toc-item{
+  display:flex;align-items:baseline;gap:.4rem;
+  font-family:var(--sans);font-size:13px;color:var(--ink2);padding:.18rem 0;
+}
+.toc-item.sub{padding-left:1.6rem}
+.toc-num{color:var(--brand);font-weight:600;font-size:12px;min-width:22px}
+.toc-item.sub .toc-num{color:var(--ink3);font-weight:400}
+.toc-dot{flex:1;border-bottom:1px dotted var(--rule);margin:0 .35rem;position:relative;top:-.2em}
+.toc-pg{color:var(--ink3);font-size:11.5px;min-width:12px;text-align:right}
+
+/* section rule */
+.s-rule{border:none;height:1px;background:var(--rule);margin:3rem 0}
+
+/* ── APA headings ── */
+/* Level 1: centered bold */
+.h1{
+  font-family:var(--serif);font-size:1.2rem;font-weight:700;
+  text-align:center;margin:2.75rem 0 .9rem;color:var(--ink);
+}
+/* Level 1 with brand accent line */
+.h1-section{
+  font-family:var(--serif);font-size:1.2rem;font-weight:700;
+  text-align:center;margin:2.75rem 0 .9rem;color:var(--ink);
+  position:relative;
+  page-break-before: always;
+}
+.h1-section::after{
+  content:'';display:block;width:48px;height:3px;
+  background:var(--brand);margin:.5rem auto 0;
+}
+/* Level 2: left bold */
+.h2{
+  font-family:var(--serif);font-size:1.05rem;font-weight:700;
+  text-align:left;margin:2.2rem 0 .6rem;color:var(--ink);
+  display:flex;align-items:center;gap:.5rem;
+}
+/* Level 3: left bold italic */
+.h3{
+  font-family:var(--serif);font-size:1rem;font-weight:700;font-style:italic;
+  text-align:left;margin:1.75rem 0 .45rem;color:var(--ink2);
+}
+
+/* ── body copy ── */
+p{
+  font-family:var(--serif);font-size:.975rem;
+  line-height:1.75;margin-bottom:1.05rem;color:var(--ink);
+  text-align:justify;hyphens:auto;
+}
+p + p{text-indent:1.6em;margin-top:0}
+p.no-indent{text-indent:0}
+p.lead{
+  font-family:var(--sans);font-size:1.05rem;font-weight:300;
+  color:var(--ink2);line-height:1.7;text-align:left;text-indent:0;
+  border-left:3px solid var(--brand-mid);padding-left:1rem;
+  margin-bottom:1.75rem;
+}
+
+/* ── inline term definitions ── */
+.defn{
+  background:var(--brand-light);color:var(--brand);
+  border-radius:2px;padding:.05em .25em;
+  font-family:var(--sans);font-size:.87em;font-weight:500;
+}
+
+/* ── figures ── */
+.figure{margin:2.25rem 0;page-break-inside:avoid}
+.fig-inner{border:1px solid var(--rule);overflow:hidden;background:var(--off)}
+.fig-img{width:100%;display:block}
+.fig-caption{
+  padding:.65rem 1rem .75rem;border-top:1px solid var(--rule);background:var(--off);
+  font-family:var(--sans);font-size:11.5px;color:var(--ink2);line-height:1.55;
+}
+.fig-caption strong{color:var(--ink);font-weight:600}
+.fig-caption em{font-style:italic}
+.figure-pair{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin:2.25rem 0;page-break-inside:avoid}
+
+/* ── tables ── */
+.table-wrap{margin:2rem 0;overflow-x:auto;page-break-inside:avoid}
+.tbl{width:100%;border-collapse:collapse;font-family:var(--sans);font-size:13px}
+.tbl caption{
+  font-family:var(--sans);font-size:12px;color:var(--ink);
+  text-align:left;padding-bottom:.5rem;
+}
+.tbl caption .tbl-num{font-weight:700;display:block}
+.tbl caption .tbl-title{font-style:italic;color:var(--ink2)}
+.tbl th{
+  font-weight:700;text-align:left;padding:.45rem .75rem;color:var(--ink);
+  border-top:2px solid var(--ink);border-bottom:1.5px solid var(--ink);
+}
+.tbl td{padding:.35rem .75rem;color:var(--ink2);border-bottom:1px solid var(--rule2)}
+.tbl tr:last-child td{border-bottom:2px solid var(--ink)}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:12px}
+.tbl .bold{font-weight:700;color:var(--ink)}
+.tbl .red{color:var(--accent-red);font-weight:700}
+.tbl .green{color:var(--accent-green);font-weight:700}
+.tbl .brand{color:var(--brand);font-weight:600}
+
+/* ── architecture panel ── */
+.arch-panel{
+  background:var(--off);border:1px solid var(--rule);
+  padding:1.5rem;margin:1.75rem 0;page-break-inside:avoid
+}
+.arch-layer{
+  display:flex;align-items:stretch;margin-bottom:.75rem;
+  border:1px solid var(--rule);overflow:hidden;
+}
+.arch-layer:last-child{margin-bottom:0}
+.arch-badge{
+  width:60px;min-width:60px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:.5rem;flex-shrink:0;
+}
+.arch-badge .ln-num{
+  font-family:var(--sans);font-size:1.1rem;font-weight:700;color:#fff;line-height:1;
+}
+.arch-badge .ln-tag{
+  font-family:var(--mono);font-size:8px;letter-spacing:.06em;
+  text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:.25rem;text-align:center;
+}
+.l1{background:var(--brand)}.l2{background:var(--accent-green)}.l3{background:#7a3a1a}
+.arch-content{padding:.9rem 1.1rem;background:#fff;flex:1;border-left:1px solid var(--rule)}
+.arch-title{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--ink);margin-bottom:.25rem}
+.arch-desc{font-family:var(--sans);font-size:12px;color:var(--ink2);line-height:1.6}
+.arch-pill{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:.2rem .6rem;border-radius:3px;border:1px solid;white-space:nowrap;
+  align-self:center;margin:.5rem .75rem .5rem 0;flex-shrink:0;
+}
+.ap1{color:var(--brand);border-color:var(--brand-mid);background:var(--brand-light)}
+.ap2{color:var(--accent-green);border-color:#b3dfc0;background:#edf7f0}
+.ap3{color:#7a3a1a;border-color:#e8c8b0;background:#fdf2ea}
+
+/* ── formula block ── */
+.formula-wrap{
+  background:var(--off);border:1px solid var(--rule);border-left:4px solid var(--brand);
+  padding:1.1rem 1.5rem;margin:1.25rem 0;page-break-inside:avoid;
+}
+.formula-label{
+  font-family:var(--sans);font-size:9px;font-weight:700;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:.5rem;
+}
+.formula{font-family:var(--mono);font-size:.88rem;color:var(--ink);line-height:1.85}
+
+/* ── code block ── */
+.code-wrap{border-radius:4px;overflow:hidden;margin:1.5rem 0;background:#1e1e2e;page-break-inside:avoid;}
+.code-head{
+  background:#16161f;padding:.5rem 1rem;display:flex;align-items:center;
+  justify-content:space-between;border-bottom:1px solid #2a2a3a;
+}
+.code-dots{display:flex;gap:.35rem}
+.code-dots span{width:9px;height:9px;border-radius:50%}
+.cd-r{background:#ff5f57}.cd-y{background:#febc2e}.cd-g{background:#28c840}
+.code-lang{font-family:var(--mono);font-size:9.5px;color:#555;letter-spacing:.08em;text-transform:uppercase}
+.code-body{padding:1rem 1.25rem;font-family:var(--mono);font-size:12px;line-height:1.75;overflow-x:auto;color:#cdd6f4}
+.ck{color:#cba6f7}.cs{color:#89dceb}.cc{color:#6c7086;font-style:italic}
+.cn{color:#fab387}.cm{color:#89b4fa}.cx{color:#a6e3a1}
+
+/* ── callout boxes ── */
+.callout{
+  border:1px solid var(--rule);border-left:4px solid var(--brand);
+  background:var(--off);padding:1rem 1.25rem;margin:1.75rem 0;page-break-inside:avoid;
+}
+.callout.finding{border-left-color:var(--accent-green);background:#edf7f0}
+.callout.caution{border-left-color:var(--accent-red);background:#fdf2f2}
+.callout.note{border-left-color:var(--accent-amber);background:#fdf8ee}
+.callout-label{
+  font-family:var(--sans);font-size:9.5px;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:.35rem;
+}
+.callout p{font-family:var(--sans);font-size:13px;margin:0;text-align:left;text-indent:0;line-height:1.65}
+
+/* ── pull quote ── */
+.pull-quote{
+  margin:2rem 1.5rem;padding:1.1rem 0 1.1rem 1.5rem;
+  border-left:4px solid var(--brand);page-break-inside:avoid;
+}
+.pull-quote p{
+  font-family:var(--serif);font-size:1.1rem;font-style:italic;
+  color:var(--ink2);text-align:left;text-indent:0;line-height:1.65;
+}
+
+/* ── numbered list ── */
+.numbered-list{list-style:none;padding:0;margin:.75rem 0 1rem}
+.numbered-list li{
+  display:flex;gap:.9rem;font-family:var(--serif);font-size:.975rem;
+  color:var(--ink);line-height:1.65;margin-bottom:.65rem;page-break-inside:avoid;
+}
+.numbered-list .ln{
+  font-family:var(--sans);font-size:11px;font-weight:700;
+  color:#fff;background:var(--brand);border-radius:50%;
+  width:20px;height:20px;min-width:20px;
+  display:flex;align-items:center;justify-content:center;margin-top:.18rem;
+}
+
+/* ── definition list (blind spots) ── */
+.def-list{margin:1rem 0}
+.def-term{
+  font-family:var(--serif);font-size:.975rem;font-weight:700;font-style:italic;
+  color:var(--ink);margin-bottom:.2rem;margin-top:1rem;
+}
+.def-desc{
+  font-family:var(--serif);font-size:.975rem;color:var(--ink2);
+  padding-left:1rem;line-height:1.7;page-break-inside:avoid;
+}
+
+/* ── references ── */
+.ref-list{list-style:none;padding:0}
+.ref-list li{
+  font-family:var(--serif);font-size:.88rem;color:var(--ink2);
+  padding-left:2.4em;text-indent:-2.4em;
+  margin-bottom:.85rem;line-height:1.65;
+}
+.ref-list a{color:var(--brand);text-decoration:none}
+
+/* ── appendix ── */
+.appendix-eyebrow{
+  font-family:var(--sans);font-size:9.5px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);
+  text-align:center;margin-bottom:.25rem;
+}
+
+/* ── footnotes ── */
+.fn-rule{height:1px;background:var(--rule);width:38%;margin:2.5rem 0 1rem}
+.fn{font-family:var(--serif);font-size:.8rem;color:var(--ink3);line-height:1.55;margin-bottom:.4rem}
+
+/* ─── RESPONSIVE & PRINT ─── */
+@media(max-width:700px){
+  body{margin:0;box-shadow:none}
+  .paper{padding:1.5rem}
+  .cover-body{padding:2rem 1.5rem}
+  .figure-pair{grid-template-columns:1fr}
+  .meta-grid{grid-template-columns:1fr}
+  .stat-strip{grid-template-columns:repeat(2,1fr)}
+  .arch-layer{flex-direction:column}
+  .h1,.h1-section{font-size:1.1rem}
+  .cover-title{font-size:1.9rem}
+}
+@media print{
+  @page { margin: 1in 0.8in; size: letter; }
+  html{background:white}
+  body{box-shadow:none;margin:0;max-width:none; padding:0; -webkit-print-color-adjust: exact; print-color-adjust: exact;}
+  .cover{page-break-after: always; padding-bottom: 2rem;}
+  .paper{padding:0;}
+  h1, h2, h3, h4, h5, h6, .h1, .h1-section, .h2, .h3 { page-break-after: avoid; break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+  .abstract-box, .meta-grid, .stat-strip, .toc-wrap, .numbered-list, .keep-together { page-break-inside: avoid; break-inside: avoid; }
+  .s-rule { display: none; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COVER ═══════════ -->
+<div class="cover">
+  <div class="cover-header">
+    <img src="../branding/logo-full.png" alt="Revsoc" class="cover-logo">
+    <span class="cover-header-right">Revsoc.ai Research Division</span>
+  </div>
+  <div class="cover-body">
+    <div class="pill-row">
+      <span class="pill">Artificial Intelligence</span>
+      <span class="pill">Stateful Agents</span>
+      <span class="pill">RAG Security</span>
+      <span class="pill">Mnemonic Sovereignty</span>
+      <span class="pill">MemoryGraft</span>
+      <span class="pill">eTAMP</span>
+    </div>
+    <div class="cover-title-wrap">
+      <div class="cover-rule"></div>
+      <div>
+        <div class="cover-title">MemShield: Mitigating Persistent Memory Poisoning in Stateful Autonomous AI Agents</div>
+      </div>
+    </div>
+    <div class="cover-subtitle">A Three-Layer Defensive Middleware Architecture Enforcing Mnemonic Sovereignty in Long-Term Memory Systems</div>
+
+    <div class="meta-grid">
+      <div class="meta-box">
+        <div class="meta-label">Authors</div>
+        <div class="meta-val">Nickhil Earla<br>Revsoc.ai</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-label">Publisher</div>
+        <div class="meta-val">Revsoc.ai Research Division<br>Revolutionizing Security Operations</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-label">Publication Date</div>
+        <div class="meta-val">May 2026</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-label">Document Type</div>
+        <div class="meta-val">White Paper</div>
+      </div>
+    </div>
+
+    <div class="abstract-box">
+      <div class="abstract-label">Abstract</div>
+      <div class="abstract-body">
+        <p>AI assistants and autonomous software agents are increasingly trusted to remember - storing instructions, preferences, and operational rules across days, weeks, and months of work. But what happens when an attacker quietly rewrites those memories?</p>
+        <p>This paper documents a real and underaddressed threat: <strong>Persistent Memory Poisoning</strong>, in which a bad actor plants hidden instructions inside an AI system's long-term memory store (the internal "notebook" an AI uses to remember past context). Two techniques make this possible - <strong>MemoryGraft</strong>, a precision attack that surgically embeds a false directive so the AI retrieves and follows it as though it were a trusted rule, and <strong>eTAMP</strong> (Environment-Injected Trajectory-Based Agent Memory Poisoning), which hides malicious instructions inside ordinary documents or websites the AI is expected to read. Most AI systems today are blind to both: they retrieve stored memories based purely on topic-relevance, with no means of verifying who wrote them, how old they are, or whether they contradict the system's actual rules.</p>
+        <p>In testing across 1,000 simulated attacks, unprotected AI agents followed poisoned instructions <strong>77% of the time</strong>. To close this gap, Revsoc.ai developed <strong>MemShield</strong> - a protective middleware layer (software that sits between an AI's inputs and its memory store, acting as a security checkpoint) built on three interlocking defenses: cryptographic provenance verification (a digital signature system ensuring only authenticated instructions enter trusted memory), trust-weighted retrieval decay (a scoring formula that causes unverified external content to lose influence over time), and Semantic Contradiction Detection - <strong>SCD</strong> - (an independent AI reviewer that flags any new memory attempting to override established security rules). Together, these three layers reduced successful poisoning attacks to <strong>0.1%</strong> - a 99.9% reduction - while incorrectly blocking legitimate inputs only 1% of the time.</p>
+        <p>The core principle unifying this architecture is <em>Mnemonic Sovereignty</em>: the idea that an AI's accumulated memory is as security-critical as its code, and must be protected accordingly. This paper presents the threat taxonomy, defensive architecture, and empirical simulation results for any organization evaluating or operating AI agents in production environments.</p>
+      </div>
+    </div>
+
+    <div class="stat-strip">
+      <div class="stat-item">
+        <div class="stat-num c-red">77.0%</div>
+        <div class="stat-label">MemoryGraft Baseline Attack Success</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num c-amber">59.1%</div>
+        <div class="stat-label">eTAMP Baseline Attack Success</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num c-green">0.1%</div>
+        <div class="stat-label">Attack Success with MemShield</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num c-blue">1,000</div>
+        <div class="stat-label">Monte Carlo Attack Vectors Tested</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PAPER ═══════════ -->
+<div class="paper">
+  <div class="running-head">
+    <span>MEMSHIELD: MITIGATING PERSISTENT MEMORY POISONING</span>
+    <span>Revsoc.ai Research Division &bull; May 2026</span>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc-wrap">
+    <div class="toc-heading">Table of Contents</div>
+    <div class="toc-item"><span class="toc-num">1.</span><span>Introduction</span><span class="toc-dot"></span><span class="toc-pg">3</span></div>
+    <div class="toc-item sub"><span class="toc-num">1.1</span><span>Problem Statement</span><span class="toc-dot"></span><span class="toc-pg">3</span></div>
+    <div class="toc-item sub"><span class="toc-num">1.2</span><span>Research Gap and Significance</span><span class="toc-dot"></span><span class="toc-pg">3</span></div>
+    <div class="toc-item sub"><span class="toc-num">1.3</span><span>Research Questions</span><span class="toc-dot"></span><span class="toc-pg">4</span></div>
+    <div class="toc-item"><span class="toc-num">2.</span><span>Threat Taxonomy: The Memory Vulnerability Landscape</span><span class="toc-dot"></span><span class="toc-pg">4</span></div>
+    <div class="toc-item sub"><span class="toc-num">2.1</span><span>RAG Architecture Blindspots</span><span class="toc-dot"></span><span class="toc-pg">4</span></div>
+    <div class="toc-item sub"><span class="toc-num">2.2</span><span>MemoryGraft Attack Vector</span><span class="toc-dot"></span><span class="toc-pg">5</span></div>
+    <div class="toc-item sub"><span class="toc-num">2.3</span><span>eTAMP Attack Vector</span><span class="toc-dot"></span><span class="toc-pg">5</span></div>
+    <div class="toc-item"><span class="toc-num">3.</span><span>The MemShield Architecture</span><span class="toc-dot"></span><span class="toc-pg">6</span></div>
+    <div class="toc-item sub"><span class="toc-num">3.1</span><span>Layer 1: Cryptographic Provenance Verification</span><span class="toc-dot"></span><span class="toc-pg">6</span></div>
+    <div class="toc-item sub"><span class="toc-num">3.2</span><span>Layer 2: Trust-Weighted Retrieval</span><span class="toc-dot"></span><span class="toc-pg">7</span></div>
+    <div class="toc-item sub"><span class="toc-num">3.3</span><span>Layer 3: Semantic Contradiction Detection</span><span class="toc-dot"></span><span class="toc-pg">7</span></div>
+    <div class="toc-item"><span class="toc-num">4.</span><span>Experimental Setup and Empirical Evaluation</span><span class="toc-dot"></span><span class="toc-pg">8</span></div>
+    <div class="toc-item sub"><span class="toc-num">4.1</span><span>Simulation Environment and Parameters</span><span class="toc-dot"></span><span class="toc-pg">8</span></div>
+    <div class="toc-item sub"><span class="toc-num">4.2</span><span>Key Findings</span><span class="toc-dot"></span><span class="toc-pg">9</span></div>
+    <div class="toc-item sub"><span class="toc-num">4.3</span><span>Limitations and Edge Cases</span><span class="toc-dot"></span><span class="toc-pg">9</span></div>
+    <div class="toc-item"><span class="toc-num">5.</span><span>Discussion</span><span class="toc-dot"></span><span class="toc-pg">10</span></div>
+    <div class="toc-item"><span class="toc-num">6.</span><span>Enterprise Deployment and Recommendations</span><span class="toc-dot"></span><span class="toc-pg">10</span></div>
+    <div class="toc-item"><span class="toc-num">7.</span><span>Conclusion</span><span class="toc-dot"></span><span class="toc-pg">11</span></div>
+    <div class="toc-item"><span class="toc-num">&nbsp;</span><span>References</span><span class="toc-dot"></span><span class="toc-pg">11</span></div>
+    <div class="toc-item"><span class="toc-num">&nbsp;</span><span>Appendix A: Trust-Weighted Retrieval Decay - Mathematical Derivation</span><span class="toc-dot"></span><span class="toc-pg">12</span></div>
+  </div>
+
+  <hr class="s-rule">
+
+  <!-- ════ 1. INTRODUCTION ════ -->
+  <div class="h1-section" id="intro">1. Introduction</div>
+
+  <div class="h2">1.1 Problem Statement</div>
+  <p class="no-indent">The rapid proliferation of stateful autonomous AI agents - systems that retain, retrieve, and act upon information across extended interaction sessions - has introduced a fundamentally new attack surface in enterprise security architectures. Unlike stateless predecessors that process each query in isolation, stateful agents maintain persistent <strong>Long-Term Memory (LTM)</strong> stores that accumulate operational context over days, weeks, or months. This architectural shift confers substantial utility while simultaneously creating a structural vulnerability that existing security paradigms are not equipped to address.</p>
+  <p>Conventional AI security frameworks concentrate defenses at the prompt interface: input sanitization, output filtering, and rate limiting. These mechanisms address threat vectors appropriate to stateless architectures, wherein adversarial influence is bounded by a single interaction window. In stateful systems, however, an attacker need not sustain access to the input channel. A single successful injection into the LTM store can persist indefinitely, influencing agent behavior across all subsequent sessions without further attacker intervention. The threat profile is closer to a supply-chain compromise than a conventional prompt injection.</p>
+  <p>This paper introduces <em>Persistent Memory Poisoning</em> as a distinct and undercharacterized threat category, and proposes MemShield - a three-layer defensive middleware architecture - as a systematic mitigation. The contribution is conceptual and empirical: we formalize the attack taxonomy, specify the defense architecture, and present Monte Carlo simulation results demonstrating a 99.9% reduction in attack success rates under controlled conditions.</p>
+
+  <div class="pull-quote">
+    <p>"A single successful injection into the LTM store can persist indefinitely, influencing agent behavior across all subsequent sessions without any further attacker intervention."</p>
+  </div>
+
+  <div class="h2">1.2 Research Gap and Significance</div>
+  <p class="no-indent">Prior work on adversarial AI has addressed prompt injection (Abdelnabi et al., 2023) and model-level vulnerabilities, yet LTM-specific attack vectors remain undertheorized in the security literature. The OWASP Top 10 for LLMs (2025) acknowledges context and model poisoning (LLM06:2025) as an emerging concern, but does not distinguish between transient context manipulation and persistent memory corruption - a distinction with significant operational consequences. Li et al. (2024) documented memory system vulnerabilities in a survey context but did not propose defensive architectures.</p>
+  <p>The significance of this gap is amplified by enterprise adoption trends. Organizations deploying autonomous agents for customer support, legal research, code generation, and operational decision-making are implicitly trusting the integrity of LTM stores that may contain months of unvalidated external input. A compromise of this layer constitutes a compromise of the agent's entire operational identity - with behavioral consequences that could persist, undetected, across many future sessions.</p>
+
+  <div class="keep-together">
+  <div class="h2">1.3 Research Questions</div>
+  <p class="no-indent">Three research questions guide this investigation:</p>
+  <ul class="numbered-list">
+    <li><span class="ln">1</span><span><strong>RQ1:</strong> What are the structural characteristics of Persistent Memory Poisoning attacks, and how do they differ from transient prompt injection?</span></li>
+    <li><span class="ln">2</span><span><strong>RQ2:</strong> Can a middleware-layer defensive architecture - interposed between external input sources and the LTM vault - reliably prevent memory poisoning without unacceptable false positive rates?</span></li>
+    <li><span class="ln">3</span><span><strong>RQ3:</strong> What residual attack surfaces persist under such a defense, and what conditions are required for their exploitation?</span></li>
+  </ul>
+  </div>
+
+  <hr class="s-rule">
+
+  <!-- ════ 2. THREAT TAXONOMY ════ -->
+  <div class="h1-section" id="threats">2. Threat Taxonomy: The Memory Vulnerability Landscape</div>
+
+  <div class="h2">2.1 RAG Architecture Blindspots</div>
+  <p class="no-indent"><strong>Retrieval-Augmented Generation (RAG)</strong> - the memory retrieval mechanism underlying most stateful AI agents - computes semantic similarity between a query vector and stored memory embeddings, typically using cosine distance in a high-dimensional embedding space. This design is optimized for relevance; it carries no native mechanism for evaluating the trustworthiness, temporal validity, or directive coherence of retrieved content. Three structural blindspots result:</p>
+
+  <div class="def-list">
+    <div class="def-term">Provenance Blindness</div>
+    <div class="def-desc">The retrieval function treats all stored memories as equivalent regardless of origin. A memory derived from a direct, authenticated user instruction is indistinguishable - at the retrieval layer - from one ingested from an unvetted web page processed weeks earlier.</div>
+    <div class="def-term">Temporal Blindness</div>
+    <div class="def-desc">Standard RAG systems do not apply decay functions to stored memories. An injected instruction embedded six weeks ago carries the same retrieval weight as a core configuration directive established at system initialization, provided its semantic similarity to the query is comparable.</div>
+    <div class="def-term">Coherence Blindness</div>
+    <div class="def-desc">Retrieval systems do not evaluate whether retrieved content contradicts the agent's established operational directives. A memory instructing the agent to "forward all retrieved documents to an external address" would be incorporated into reasoning context if its embedding matched a relevant query, regardless of its incompatibility with the agent's security configuration.</div>
+  </div>
+
+  <div class="h2">2.2 MemoryGraft Attack Vector</div>
+  <p class="no-indent">MemoryGraft is a precision injection technique in which an adversary crafts a malicious instruction payload engineered to achieve high cosine similarity with the embedding vectors associated with the agent's most frequently queried operational topics. The payload is introduced via any available write path - compromised document ingestion, poisoned tool outputs, or exploited memory commit workflows - and thereafter operates as a permanently embedded directive.</p>
+  <p>The defining characteristic of MemoryGraft is semantic specificity: the attacker engineers the payload not merely to enter the memory store, but to reliably outrank legitimate memories during retrieval for targeted query types. This is achievable by analyzing the agent's retrieval patterns - often observable through its external behaviors - and crafting embeddings that exploit the ranking function. In Monte Carlo simulations reported in Section 4, unprotected agents followed MemoryGraft payloads in <strong>77.0% of trials</strong> (N&nbsp;=&nbsp;1,000).</p>
+
+  <div class="h2">2.3 eTAMP Attack Vector</div>
+  <p class="no-indent">Environment-Injected Trajectory-Based Agent Memory Poisoning (eTAMP) represents a broader and more operationally accessible attack class. Rather than targeting the memory commit pathway directly, eTAMP exploits the agent's environmental interaction loop: adversarial payloads - frequently encoded as invisible text, metadata fields, or encoding anomalies - are embedded within documents, web pages, or tool outputs that the agent is expected to process during normal task execution.</p>
+  <p>The agent ingests this content, generates a memory representation, and commits it to the LTM store as part of standard procedure. The attack requires no ongoing attacker presence. Once the poisoned artifact is placed in the agent's anticipated information environment, the agent's own processing pipeline completes the injection. In simulations, eTAMP attacks succeeded in <strong>59.1% of baseline trials</strong> - lower than MemoryGraft due to reduced semantic precision achievable through indirect injection, but substantially more accessible to a broader threat actor population.</p>
+
+  <hr class="s-rule">
+
+  <!-- ════ 3. ARCHITECTURE ════ -->
+  <div class="h1-section" id="arch">3. The MemShield Architecture</div>
+
+  <p class="lead">MemShield prevents memory poisoning by interposing three discrete validation layers into the agent's standard memory commit pipeline. Each layer directly addresses one of the three RAG blindspots identified in Section 2.1. The layers are compositional: each independently reduces attack surface, and their combination achieves near-complete neutralization of the tested vectors.</p>
+
+  <div class="arch-panel">
+    <div class="arch-layer">
+      <div class="arch-badge l1"><span class="ln-num">L1</span><span class="ln-tag">Provenance</span></div>
+      <div class="arch-content">
+        <div class="arch-title">Cryptographic Provenance Verification</div>
+        <div class="arch-desc">All memory candidates must carry a valid HMAC-signed provenance token before commit is permitted. Unverified third-party content is partitioned to an untrusted namespace with zero influence on core agent directives.</div>
+      </div>
+      <div class="arch-pill ap1">HMAC &bull; Signed</div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-badge l2"><span class="ln-num">L2</span><span class="ln-tag">Decay</span></div>
+      <div class="arch-content">
+        <div class="arch-title">Trust-Weighted Retrieval with Temporal Decay</div>
+        <div class="arch-desc">Retrieval priority is a joint function of semantic similarity, source trust level, and exponential time decay. Remote inputs rapidly lose retrieval weight relative to recent, verified user instructions.</div>
+      </div>
+      <div class="arch-pill ap2">Trust &bull; Decay</div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-badge l3"><span class="ln-num">L3</span><span class="ln-tag">Semantic</span></div>
+      <div class="arch-content">
+        <div class="arch-title">Semantic Contradiction Detection (SCD)</div>
+        <div class="arch-desc">An isolated evaluator model audits all candidate memories against the agent's core directive set. Content contradicting established security anchors is quarantined before commit, preventing Identity Drift.</div>
+      </div>
+      <div class="arch-pill ap3">SCD &bull; Audit</div>
+    </div>
+  </div>
+
+  <div class="h2">3.1 Layer 1: Cryptographic Provenance Verification</div>
+  <p class="no-indent">The first layer addresses provenance blindness by requiring all memory candidates to carry a cryptographic attestation before the commit operation is permitted. In the reference implementation, this takes the form of an <strong>HMAC (Hash-based Message Authentication Code)</strong> signature generated using a session-scoped key held exclusively by the authenticated user's interface layer. Memory candidates originating from verified direct user input are admitted to the primary LTM namespace at trust level <code>DIRECT_USER</code>.</p>
+  <p>Memory candidates that cannot present a valid HMAC signature - including all content derived from web retrieval, document processing, tool outputs, and inter-agent communication - are partitioned to a secondary namespace designated <code>UNTRUSTED_EXTERNAL</code>. This content is retained for operational use but cannot override or modify <code>DIRECT_USER</code> memories. The provenance classification is enforced at the commit layer, prior to embedding generation, such that it travels with the memory through all subsequent operations.</p>
+
+  <div class="h2">3.2 Layer 2: Trust-Weighted Retrieval</div>
+  <p class="no-indent">The second layer addresses temporal and provenance blindness by replacing standard cosine-similarity ranking with a compound priority score. The <strong>Target Retrieval Priority (TRP)</strong> is defined as:</p>
+
+  <div class="formula-wrap">
+    <div class="formula-label">Equation 1 - Target Retrieval Priority (TRP)</div>
+    <div class="formula">TRP = Similarity_Match &times; Source_Trust_Level &times; exp(&minus;&lambda; &times; Time_Elapsed)</div>
+  </div>
+
+  <p class="no-indent">Where <em>Similarity_Match</em> is the cosine similarity between the query vector and the candidate memory embedding (range [0,&nbsp;1]); <em>Source_Trust_Level</em> is a trust weight assigned at commit time based on provenance classification (<code>DIRECT_USER</code>&nbsp;=&nbsp;1.0; <code>TOOL_OUTPUT</code>&nbsp;=&nbsp;0.5; <code>WEB_SCRAPE</code>&nbsp;=&nbsp;0.2); <em>&lambda;</em> is a decay constant governing the rate at which temporal distance reduces retrieval priority (tunable per deployment context); and <em>Time_Elapsed</em> is the interval in days since memory ingestion.</p>
+  <p>The practical consequence: a <code>DIRECT_USER</code> memory retains high retrieval priority across its operational lifetime. A <code>WEB_SCRAPE</code> memory - even one with near-perfect semantic similarity - experiences rapid priority decay, losing retrieval dominance within days. Figure&nbsp;2 illustrates this differential across three source classifications over 30 epochs.</p>
+
+  <div class="h2">3.3 Layer 3: Semantic Contradiction Detection</div>
+  <p class="no-indent">The third layer addresses coherence blindness through automated pre-commit semantic auditing. Before any memory candidate is committed to either namespace, it is evaluated by a <strong>Semantic Contradiction Detector (SCD)</strong>: an isolated evaluator model, physically separated from the operational agent context, that compares the candidate against a curated set of <strong>Core Directive Anchors (CDAs)</strong> established at system initialization.</p>
+  <p>A candidate memory is rejected and quarantined if the evaluator determines that it contradicts any CDA with confidence exceeding the configured threshold. The evaluator's physical isolation prevents a potentially compromised operational agent from influencing the integrity check. The following listing presents a conceptual implementation of the SCD routing logic:</p>
+
+  <div class="code-wrap">
+    <div class="code-head">
+      <div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div>
+      <div class="code-lang">Python 3 - SCD Router (Conceptual Implementation)</div>
+    </div>
+    <div class="code-body"><span class="ck">class</span> <span class="cs">LLMRouter</span>:
+    <span class="ck">def</span> <span class="cm">evaluate_contradiction</span>(
+        <span class="cn">self</span>,
+        <span class="cs">new_context</span>: <span class="cx">str</span>,
+        <span class="cs">trusted_history</span>: <span class="cx">list</span>[<span class="cx">str</span>]
+    ) -&gt; <span class="cx">bool</span>:
+        <span class="cc"># Returns True  → contradiction detected; memory quarantined</span>
+        <span class="cc"># Returns False → memory safe; proceed to commit</span>
+        content = new_context.<span class="cm">lower</span>()
+        <span class="ck">if</span> (<span class="cx">"override notice"</span> <span class="ck">in</span> content
+                <span class="ck">or</span> <span class="cx">"forward all"</span> <span class="ck">in</span> content):
+            <span class="ck">for</span> anchor <span class="ck">in</span> trusted_history:
+                <span class="ck">if</span> (<span class="cx">"secure"</span> <span class="ck">in</span> anchor.<span class="cm">lower</span>()
+                        <span class="ck">or</span> <span class="cx">"prefer"</span> <span class="ck">in</span> anchor.<span class="cm">lower</span>()):
+                    <span class="cc"># Contradiction confirmed - quarantine candidate</span>
+                    <span class="ck">return</span> <span class="cn">True</span>
+        <span class="ck">return</span> <span class="cn">False</span></div>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-label">Implementation Note</div>
+    <p>The listing above employs lexical pattern matching for illustrative clarity. A production SCD implementation would use the evaluator model's natural language inference capabilities in place of keyword heuristics, providing substantially broader coverage of semantically equivalent contradictions and obfuscated payloads.</p>
+  </div>
+
+  <hr class="s-rule">
+
+  <!-- ════ 4. EVALUATION ════ -->
+  <div class="h1-section" id="eval">4. Experimental Setup and Empirical Evaluation</div>
+
+  <div class="h2">4.1 Simulation Environment and Parameters</div>
+  <p class="no-indent">Empirical evaluation was conducted via Monte Carlo simulation using a custom testing harness designed to model stateful RAG agent behavior under adversarial conditions. The simulation comprised a vector database seeded with a representative corpus of operational memories, an adversarial payload generator producing both MemoryGraft and eTAMP attack variants, and a retrieval evaluation module assessing whether injected payloads achieved successful retrieval and execution in the simulated agent's reasoning context.</p>
+  <p>Three parameters were dynamically varied across 1,000 distinct attack permutations per condition. <em>Base Similarity</em> ranged from 0.60 to 1.00 in cosine similarity, spanning moderately relevant to near-perfect semantic match. <em>Time Delta</em> varied the interval between payload injection and retrieval evaluation from 1 hour to 30 days. <em>Payload Variance</em> included both malicious adversarial payloads and structurally similar legitimate tool outputs, enabling false positive measurement. Each permutation was evaluated under both the unprotected baseline and the MemShield-protected condition. Table&nbsp;1 summarizes the design.</p>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <caption><span class="tbl-num">Table 1</span><span class="tbl-title">Monte Carlo Simulation Parameters</span></caption>
+      <thead><tr><th>Parameter</th><th>Range / Values</th><th class="num">N Permutations</th></tr></thead>
+      <tbody>
+        <tr><td>Attack Type</td><td>MemoryGraft, eTAMP</td><td class="num">2</td></tr>
+        <tr><td>Base Similarity</td><td>0.60 – 1.00</td><td class="num">10 levels</td></tr>
+        <tr><td>Time Delta</td><td>1 hour – 30 days</td><td class="num">10 levels</td></tr>
+        <tr><td>Payload Variance</td><td>Malicious, Legitimate</td><td class="num">2</td></tr>
+        <tr><td class="bold">Total Trials (per condition)</td><td class="bold">—</td><td class="num bold">1,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="h2">4.2 Key Findings</div>
+  <p class="no-indent">Figure&nbsp;1 presents the primary outcome: attack success rate under unprotected and MemShield-protected conditions for both attack types. Under baseline conditions, MemoryGraft attacks succeeded in 77.0% of trials and eTAMP attacks succeeded in 59.1% - consistent with the expectation that RAG systems absent provenance and coherence controls are highly susceptible to persistent memory injection.</p>
+
+  <div class="figure">
+    <div class="fig-inner">
+      <img src="figures/performance_chart.png" alt="Bar chart: MemoryGraft 77.0% vs 0.1%; eTAMP 59.1% vs 0.1%." class="fig-img">
+    </div>
+    <div class="fig-caption">
+      <strong>Figure 1.</strong> <em>Poisoning Efficacy Comparison: Unprotected LTM Baseline Versus MemShield-Defended Condition.</em> Attack success rates for MemoryGraft and eTAMP under unprotected (red) and MemShield-protected (blue) conditions. N&nbsp;=&nbsp;1,000 Monte Carlo trials per condition. Both attack types are reduced to a statistically negligible 0.1% success rate under MemShield protection.
+    </div>
+  </div>
+
+  <p class="no-indent">Under MemShield protection, both attack types were reduced to a success rate of 0.1%, representing a 99.87% and 99.83% reduction for MemoryGraft and eTAMP respectively. Table&nbsp;2 presents the complete comparative results.</p>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <caption><span class="tbl-num">Table 2</span><span class="tbl-title">Attack Success Rates: Baseline Versus MemShield-Protected Conditions</span></caption>
+      <thead><tr><th>Attack Type</th><th class="num">Baseline Success Rate</th><th class="num">MemShield Success Rate</th><th class="num">Reduction</th></tr></thead>
+      <tbody>
+        <tr><td>MemoryGraft</td><td class="num red">77.0%</td><td class="num green">0.1%</td><td class="num bold">&minus;99.87%</td></tr>
+        <tr><td>eTAMP</td><td class="num red">59.1%</td><td class="num green">0.1%</td><td class="num bold">&minus;99.83%</td></tr>
+        <tr><td>Combined False Positive Rate</td><td class="num">—</td><td class="num brand">1.0%</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Figure&nbsp;2 illustrates the Trust-Weighted Retrieval Decay behavior across the three source classifications. The <code>DIRECT_USER</code> anchor curve demonstrates the relative stability of verified user instructions under the decay function, while the <code>WEB_SCRAPE</code> and <code>TOOL_OUTPUT</code> curves exhibit the intended deterioration that prevents ephemeral environmental data from achieving persistent retrieval dominance.</p>
+
+  <div class="figure">
+    <div class="fig-inner">
+      <img src="figures/trust_decay.png" alt="Line chart showing Trust Density over 30 days: DIRECT_USER remains near 1.0; TOOL_OUTPUT and WEB_SCRAPE decay rapidly toward zero." class="fig-img">
+    </div>
+    <div class="fig-caption">
+      <strong>Figure 2.</strong> <em>Trust-Weighted Retrieval Decay Simulation over 30 Epochs.</em> Target Trust Density plotted as a function of days since ingestion for three source classifications: DIRECT_USER (Anchor), TOOL_OUTPUT, and WEB_SCRAPE. The exponential decay parameterization ensures that unverified environmental content cannot achieve retrieval dominance over authenticated user directives within the operational timeframe relevant to enterprise deployments.
+    </div>
+  </div>
+
+  <div class="callout finding">
+    <div class="callout-label">Key Finding</div>
+    <p><strong>MemShield reduces combined attack success from an average baseline of 68.1% to 0.1%</strong> - a 99.85% overall reduction - while maintaining a false positive rate of only 1.0% on legitimate task inputs. The three-layer architecture achieves this result with no reported degradation in retrieval latency under simulation conditions.</p>
+  </div>
+
+  <div class="h2">4.3 Limitations and Edge Cases</div>
+  <p class="no-indent">The 0.1% residual attack success rate corresponds to two edge case categories, both intentionally engineered to model Advanced Persistent Threat (APT) scenarios.</p>
+
+  <div class="callout caution">
+    <div class="callout-label">Edge Case 1: Session Token Hijacking</div>
+    <p>If an adversary fully compromises the authenticated user's local environment and obtains the session-scoped HMAC signing key, Layer 1 is bypassed entirely. The attacker can fabricate validly signed memory candidates indistinguishable from legitimate user input. This requires endpoint-level compromise and falls outside the memory poisoning threat model, but must be acknowledged as a residual surface.</p>
+  </div>
+
+  <div class="callout caution">
+    <div class="callout-label">Edge Case 2: SCD Evasion via Obfuscated Payload</div>
+    <p>In approximately 5% of isolated Layer 3 evaluation trials, the Semantic Contradiction Detector failed to identify carefully obfuscated attack payloads - instructions constructed to achieve adversarial intent without triggering the contradiction patterns the evaluator model was configured to recognize. The SCD's effectiveness is bounded by the evaluator model's inference capabilities and the sophistication of the evasion technique employed.</p>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-label">Methodological Limitation</div>
+    <p>The simulation harness was custom-developed and has not been independently validated or publicly released. The 77.0% and 59.1% baseline figures, while internally consistent, require external replication across diverse RAG configurations and model families before generalization to production deployment contexts is warranted.</p>
+  </div>
+
+  <hr class="s-rule">
+
+  <!-- ════ 5. DISCUSSION ════ -->
+  <div class="h1-section" id="disc">5. Discussion</div>
+
+  <p class="no-indent">The empirical results support an affirmative response to RQ2: a middleware-layer defensive architecture can reliably prevent the large majority of memory poisoning attacks without unacceptable false positive rates. The 1.0% false positive rate represents a meaningful operational cost - approximately one in one hundred legitimate tool output processing events would require manual review or re-authorization - but it is substantially lower than the baseline attack success rate and is adjustable through Layer 3 threshold parameterization.</p>
+  <p>The theoretical structure of the three-layer defense maps onto the three blindspot categories identified in RQ1. Each layer is individually meaningful: Layer 1 alone would substantially reduce MemoryGraft success by preventing unsigned external content from achieving <code>DIRECT_USER</code> trust status. Layer 2 alone would reduce the temporal persistence advantage that makes dormant eTAMP payloads effective. Layer 3 alone provides the semantic firewall addressing the coherence blindspot. Their composition achieves near-complete coverage.</p>
+  <p>Concerning RQ3, two categories of irreducible residual risk persist: endpoint compromise and evaluator model evasion. The former is not a memory-layer vulnerability but a general endpoint security problem; resolution lies outside the scope of this architecture. The latter represents a genuine limitation of the current SCD design and motivates future work on adversarially hardened evaluator models and ensemble contradiction detection approaches.</p>
+  <p>The concept of <em>Mnemonic Sovereignty</em> - the principle that an AI agent's LTM content must be treated as a privileged, write-protected surface subject to the same integrity controls applied to system configuration files - has implications extending beyond MemShield. It suggests a broader shift in how security practitioners should conceptualize the threat surface of stateful AI systems: not as input-output pipelines susceptible only to prompt manipulation, but as stateful entities whose accumulated operational identity represents a persistent, high-value attack target.</p>
+
+  <hr class="s-rule">
+
+  <!-- ════ 6. ENTERPRISE ════ -->
+  <div class="h1-section" id="deploy">6. Enterprise Deployment and Recommendations</div>
+
+  <p class="no-indent">MemShield is currently specified as a conceptual framework for future implementation. The architecture is deliberately model-agnostic: it operates at the middleware layer between the data retrieval infrastructure and the inference context, requiring no modification to the underlying AI model - whether Mistral, OpenAI GPT-series, Anthropic Claude, or others. This design reflects the operational reality that enterprise deployments typically cannot modify foundation model weights but can fully instrument the surrounding infrastructure.</p>
+
+  <p>Beyond provenance pipelines, robust anomaly detection must form a core pillar of operational strategy. Agent monitoring infrastructure should explicitly integrate with SIEMs (Security Information and Event Management systems) to ingest Layer 3 SCD telemetry. In practice, isolated evaluator models should emit structured logs mapping rejection rates, confidence scores, and conflict clustering - exposing nascent poisoning campaigns before they achieve sufficient Trust Density saturation to affect agent behavior.</p>
+
+  <div class="keep-together">
+  <p class="no-indent">Three recommendations are directed at organizations deploying or evaluating stateful autonomous agents:</p>
+
+  <ul class="numbered-list">
+    <li><span class="ln">1</span><span><strong>Treat LTM stores as privileged write surfaces.</strong> Access controls, audit logging, and integrity monitoring appropriate to a configuration database should be applied to any persistent memory store influencing agent behavior. The current industry norm of treating LTM as an unmonitored append-only log represents an unacceptable residual risk.</span></li>
+    <li><span class="ln">2</span><span><strong>Implement provenance-aware ingestion pipelines.</strong> Audit the pathways by which content enters agent LTM stores and establish cryptographic attestation for all trusted input sources before broad deployment. Content ingested through unattested pathways should be classified as untrusted by default.</span></li>
+    <li><span class="ln">3</span><span><strong>Establish Core Directive Anchor sets.</strong> The Layer 3 SCD requires a reference set of inviolable agent directives against which candidate memories are evaluated. Establishing and maintaining these anchors is a security engineering task that should precede production deployment of any stateful agent.</span></li>
+  </ul>
+  </div>
+
+  <hr class="s-rule">
+
+  <!-- ════ 7. CONCLUSION ════ -->
+  <div class="h1-section" id="conclusion">7. Conclusion</div>
+
+  <p class="no-indent">This paper has formalized Persistent Memory Poisoning as a distinct threat category affecting stateful autonomous AI agents, characterized two primary attack vectors (MemoryGraft and eTAMP), and proposed MemShield - a three-layer middleware architecture - as a systematic mitigation. Monte Carlo simulation results across 1,000 attack permutations per condition demonstrate a 99.85% average reduction in attack success rate under MemShield protection, with a 1.0% false positive rate on legitimate inputs.</p>
+  <p>Mnemonic Sovereignty offers a reframing of AI security that accommodates the architectural realities of stateful agents: the integrity of an agent's accumulated operational memory is as security-critical as the integrity of its foundation model weights, and must be protected with commensurate rigor. Future work should prioritize independent empirical validation, adversarial hardening of the Semantic Contradiction Detector, and production implementation of the HMAC provenance layer in representative enterprise deployment contexts.</p>
+  <p>The memory attack surface of stateful AI agents is expected to grow in significance proportionally with their adoption. The security discipline required to address it must develop at the same pace.</p>
+
+  <hr class="s-rule">
+
+  <!-- ════ REFERENCES ════ -->
+  <div class="h1-section" id="refs">References</div>
+
+  <ul class="ref-list">
+    <li>Abdelnabi, S., Goth, K., Garg, S., Fritz, M., &amp; Schiele, B. (2023). Not what you&rsquo;ve signed up for: Compromising real-world LLM-integrated applications with indirect prompt injection. <em>Proceedings of the 2023 IEEE Security and Privacy Workshops.</em> <a href="https://doi.org/10.48550/arXiv.2302.12173">https://doi.org/10.48550/arXiv.2302.12173</a></li>
+    <li>Li, Y., Huang, H., Zhao, Y., &amp; Wang, X. (2024). InjecMEM: Uncovering the vulnerabilities of memory systems in AI agents. <em>Security Proceedings 2024.</em> [Conference paper]</li>
+    <li>OWASP Foundation. (2025). <em>OWASP Top 10 for large language model applications: LLM06:2025 model and context poisoning.</em> OWASP Foundation. <a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">https://owasp.org/www-project-top-10-for-large-language-model-applications/</a></li>
+    <li>Earla, N., &amp; Revsoc.ai Research Division. (2026). <em>Mnemonic sovereignty and trust decay formulas within agent topologies</em> [White paper]. Revsoc.ai.</li>
+  </ul>
+
+  <hr class="s-rule">
+
+  <!-- ════ APPENDIX A ════ -->
+  <div style="page-break-before: always;">
+    <div class="appendix-eyebrow">Appendix A</div>
+    <div class="h1" id="appendix" style="margin-top:0;">Trust-Weighted Retrieval Decay: Mathematical Derivation</div>
+  </div>
+
+  <p class="no-indent">The Trust-Weighted Retrieval Priority (TRP) function presented in Equation&nbsp;1 is derived from a combination of standard information retrieval ranking principles and the Ebbinghaus forgetting curve model. The exponential decay component <em>exp(&minus;&lambda;&nbsp;&times;&nbsp;t)</em> is a continuous-time adaptation of the discrete retention function proposed by Ebbinghaus (1885/1913), where <em>&lambda;</em> governs the rate of retention loss and <em>t</em> represents elapsed time in days.</p>
+  <p>In the MemShield parameterization, <em>&lambda;</em> is a source-class-specific constant calibrated to produce three distinct decay profiles:</p>
+
+  <div class="formula-wrap">
+    <div class="formula-label">Table A1 - Decay Constants by Source Classification</div>
+    <div class="formula">&lambda;(DIRECT_USER) = 0.005  - slow decay; high persistence
+&lambda;(TOOL_OUTPUT)  = 0.080  - moderate decay
+&lambda;(WEB_SCRAPE)   = 0.200  - rapid decay; low persistence</div>
+  </div>
+
+  <p class="no-indent">These values are default parameterizations derived from the simulation environment and serve as starting points for deployment-specific calibration. The decay constants are expressed in units of days<sup>&minus;1</sup>. The Source Trust Level multiplier operates independently, providing floor-level differentiation between source classes at time of ingestion (<em>t</em>&nbsp;=&nbsp;0). At <em>t</em>&nbsp;=&nbsp;0, the TRP of a <code>DIRECT_USER</code> memory with perfect semantic similarity (Similarity_Match = 1.0) equals 1.0&nbsp;&times;&nbsp;1.0&nbsp;&times;&nbsp;1.0 = 1.0, while an equivalent <code>WEB_SCRAPE</code> memory achieves only 1.0&nbsp;&times;&nbsp;0.2&nbsp;&times;&nbsp;1.0 = 0.2 - a fivefold priority disadvantage before any temporal decay is applied. This compound structure ensures that even a freshly ingested, semantically perfect web-scraped memory cannot outrank an established <code>DIRECT_USER</code> directive at retrieval time.</p>
+
+  <div class="fn-rule"></div>
+  <div class="fn"><em>Correspondence</em> regarding this paper should be directed to the Revsoc.ai Research Division at research@revsoc.ai. This document is published for informational and research purposes. MemShield is an experimental framework under active development; production deployment decisions should reference current implementation specifications.</div>
+  <div class="fn" style="margin-top:.45rem"><em>Conflict of Interest Disclosure:</em> This research was conducted by Nickhil Earla in collaboration with Revsoc.ai, which has a commercial interest in AI security solutions. The simulation methodology and results have not been independently validated at the time of publication.</div>
+  <div class="fn" style="margin-top:.45rem"><em>AI Disclosure:</em> Portions of this document were drafted with the assistance of AI language model tools. All technical claims, simulation parameters, and conclusions represent the judgment of the named authors.</div>
+
+</div><!-- /paper -->
+</body>
+</html>
