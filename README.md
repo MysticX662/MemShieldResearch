@@ -2,129 +2,156 @@
 
 # MemShield: Mitigating Persistent Memory Poisoning in Stateful AI Agents
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-red)](paper/MemShield_WhitePaper_Final.pdf)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Paper](https://img.shields.io/badge/White%20Paper-PDF-red)](paper/MemShield_WhitePaper_Final.pdf)
+[![Published by RevSoc](https://img.shields.io/badge/Publisher-RevSoc%20Research-1f6feb)](https://revsoc.ai/research/memshield)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Defense Architecture against Persistent Memory Poisoning in Stateful Autonomous AI Agents**
+**A three-layer defensive middleware architecture for protecting long-term memory in stateful autonomous AI agents.**
+
+**Author:** Nickhil Earla  
+**Publisher:** RevSoc Research Division  
+**Published:** May 2026  
+**Research status:** Independent white paper; simulation-based evaluation; not peer reviewed
+
+[Read the RevSoc publication](https://revsoc.ai/research/memshield) · [Open the paper](paper/MemShield_WhitePaper_Final.pdf) · [View the architecture](ARCHITECTURE.md)
 
 </div>
 
-## 📖 Overview
-
-Autonomous agents rely heavily on Vector Databases to store long-term memory (LTM). This makes them vulnerable to **indirect prompt injections** (e.g., eTAMP, MemoryGraft, MINJA, InjecMEM) that can lie dormant in the memory store until retrieved in future sessions. 
-
-**MemShield** is a Python-based middleware architecture designed to protect these subsystems from memory and context poisoning (OWASP ASI06). It mitigates threats through a robust, three-layer verification pipeline:
-
-1. **Provenance Check**: Validates cryptographic tokens (HMAC/SHA256) to reject unauthorized or anonymous writes to memory.
-2. **Trust-Weighted Retrieval**: Modifies retrieval distance based on semantic similarity, historical trust scores, and temporal exponential decay.
-3. **Semantic Conflict Layer**: Utilizes a Mistral-powered LLM consistency judge (with automated capacity fallback routing) to flag logical contradictions during generation.
-
 ---
 
-## 🗂️ Repository Structure
+## Overview
+
+Stateful autonomous agents store instructions, preferences, retrieved content, and operational context in long-term memory. That persistence creates an attack surface: malicious content can be written into memory during one interaction and influence the agent later, after the original source is no longer visible.
+
+MemShield is a Python middleware framework designed to reduce this risk through three defenses:
+
+1. **Cryptographic provenance** — HMAC/SHA-256 tokens distinguish authenticated instructions from anonymous or untrusted memory writes.
+2. **Trust-weighted retrieval** — retrieval priority combines semantic similarity, source trust, historical behavior, and temporal exponential decay.
+3. **Semantic contradiction detection** — an isolated Mistral-powered evaluator checks candidate memories against protected directive anchors and quarantines conflicting instructions.
+
+The project focuses on persistent memory poisoning and indirect prompt-injection patterns, including the MemoryGraft and eTAMP attack models described in the paper.
+
+## Simulated Results
+
+The paper reports results from a custom Monte Carlo simulation harness:
+
+| Condition | Simulated attack success |
+|---|---:|
+| MemoryGraft baseline | 77.0% |
+| eTAMP baseline | 59.1% |
+| With MemShield enabled | 0.1% |
+
+The simulation also reported a **1.0% false-positive rate**.
+
+These results should be interpreted as evidence from the included simulation design, not as independently validated production benchmarks. They have not yet been generalized across diverse model families, vector databases, RAG configurations, or live enterprise environments.
+
+## Architecture
 
 ```text
-MemShield/
-├── data/                   # Datasets (raw & processed) for empirical evaluations
-├── figures/                # Output directory for generated charts and architectures
-├── notebooks/              # Jupyter notebooks for data exploration and demonstrations
-├── paper/                  # Final white paper deliverables (PDF/HTML)
-├── results/                # Evaluation outputs, metrics, and empirical summaries
-├── scripts/                # Standalone helper scripts (e.g., charting)
-├── src/                    # Core MemShield middleware and LLM routing logic
-├── tests/                  # Unit and integration test suite
-├── .env.example            # Environment variables template
-├── AGENTS.md               # Details on Red/Blue team simulated AI coders
-├── ARCHITECTURE.md         # Deep-dive into MemShield's verification layers
-└── requirements.txt        # Python dependency manifest
+Untrusted content or memory write
+              │
+              ▼
+┌──────────────────────────────┐
+│ 1. Provenance verification   │
+│ HMAC/SHA-256 authentication  │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 2. Trust-weighted retrieval  │
+│ similarity + trust + decay   │
+└──────────────┬───────────────┘
+               ▼
+┌──────────────────────────────┐
+│ 3. Semantic conflict check   │
+│ contradiction + quarantine   │
+└──────────────┬───────────────┘
+               ▼
+        Approved context
 ```
 
----
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full mechanical design and [AGENTS.md](AGENTS.md) for the simulated red-team, blue-team, and auditor roles.
 
-## 🚀 Installation & Setup
+## Repository Structure
 
-### Prerequisites
-* **Python 3.10+**
-* `pip`
-* A **Mistral API Key** (required for Layer 3 Semantic Validation runs)
+```text
+MemShieldResearch/
+├── data/                   # Raw and processed evaluation data
+├── figures/                # Generated charts and architecture figures
+├── notebooks/              # Exploration and demonstrations
+├── paper/                  # White paper in PDF/HTML formats
+├── results/                # Evaluation outputs and summaries
+├── scripts/                # Supporting utilities
+├── src/                    # Middleware, routing, and evaluation code
+├── tests/                  # Unit and integration tests
+├── AGENTS.md               # Simulated attacker/defender roles
+├── ARCHITECTURE.md         # Detailed architecture documentation
+└── requirements.txt        # Python dependencies
+```
 
-### Quick Start
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/MysticX662/MemShieldResearch.git
-   cd MemShieldResearch
-   ```
+## Reproduce the Evaluation
 
-2. **Create and activate a virtual environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   ```
+### Requirements
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+- Python 3.10+
+- `pip`
+- A Mistral API key for Layer 3 semantic validation
 
-4. **Environment Configuration:**
-   Create a `.env` file in the root directory and add your Mistral API Key. 
-   ```bash
-   echo "MISTRAL_API_KEY=your_api_key_here" > .env
-   ```
-   > **Note**: The system uses an automated LLM router (`src/llm_router.py`) that intelligently switches models if usage limits (HTTP 429) are reached during stress testing.
+### Setup
 
----
+```bash
+git clone https://github.com/MysticX662/MemShieldResearch.git
+cd MemShieldResearch
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+```
 
-## 🧪 Usage & Reproducibility
+Add your key to `.env`:
 
-### Baseline Poisoning Simulation
-To execute the baseline poisoning simulation against the MemShield defense pipeline:
+```text
+MISTRAL_API_KEY=your_api_key_here
+```
+
+### Run a verification demonstration
+
 ```bash
 python src/run_verification.py
 ```
-*This script will simulate a Red-Team injection attack and demonstrate how the Blue-Team MemShield layers quarantine anomalous memory entries.*
 
-### Full Empirical Evaluation
-To run the automated research evaluations that generate the metrics cited in the paper:
+### Run the full simulation suite
+
 ```bash
 python src/run_experiments.py
 ```
-Results will be output to the `results/` directory, and visualizations will be saved to `figures/`.
 
----
+Outputs are written to `results/`, with visualizations saved to `figures/`.
 
-## 📊 Results
+## Scope and Limitations
 
-The empirical evaluation of MemShield demonstrates significant improvements in maintaining agent integrity under adversarial conditions. For detailed charts, such as the trust decay curves and performance baselines, see the `figures/` directory or refer to the full [White Paper](paper/MemShield_WhitePaper_Final.pdf).
+- The reported metrics come from a custom simulation harness.
+- The work has not been independently peer reviewed or externally replicated.
+- Performance may differ across embedding models, vector stores, agent frameworks, prompts, and deployment environments.
+- The semantic-conflict layer depends on an external model and can inherit model-specific errors or availability limits.
+- MemShield is an experimental research framework, not a finished production security product.
 
----
-
-## 📚 Documentation
-
-For an in-depth understanding of the system, please refer to our extended documentation:
-- 🧠 **[ARCHITECTURE.md](ARCHITECTURE.md)**: Detailed mechanical breakdown of the defense layers and Mnemonic Sovereignty.
-- 🤖 **[AGENTS.md](AGENTS.md)**: Instructions and profiles for our specialized Red-Team, Blue-Team, and Auditor agents.
-
----
-
-## 📝 Citation
-
-If you use MemShield or find our research helpful in your work, please cite our paper:
+## Citation
 
 ```bibtex
-@article{memshield2026,
-  title={MemShield: Mitigating Persistent Memory Poisoning in Stateful AI Agents},
-  author={MysticX662 et al.},
-  year={2026},
-  publisher={GitHub},
-  url={https://github.com/MysticX662/MemShieldResearch}
+@techreport{earla2026memshield,
+  title     = {MemShield: Mitigating Persistent Memory Poisoning in Stateful AI Agents},
+  author    = {Nickhil Earla},
+  year      = {2026},
+  month     = {May},
+  institution = {RevSoc Research Division},
+  type      = {White Paper},
+  url       = {https://revsoc.ai/research/memshield}
 }
 ```
 
----
+A machine-readable citation is also available in [`CITATION.cff`](CITATION.cff).
 
-## 📄 License
+## License
 
-This project is licensed under the [MIT License](LICENSE).
+This repository is licensed under the [MIT License](LICENSE).
