@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this research, please cite the white paper below."
+title: "MemShield: Mitigating Persistent Memory Poisoning in Stateful AI Agents"
+type: report
+authors:
+  - family-names: Earla
+    given-names: Nickhil
+    orcid: ""
+version: 1.0.0
+date-released: 2026-05-22
+publisher: "RevSoc Research Division"
+license: MIT
+repository-code: "https://github.com/MysticX662/MemShieldResearch"
+url: "https://revsoc.ai/research/memshield"
+keywords:
+  - AI security
+  - autonomous agents
+  - long-term memory
+  - memory poisoning
+  - prompt injection
+  - retrieval-augmented generation
+abstract: >-
+  MemShield is an experimental three-layer middleware architecture for reducing
+  persistent memory poisoning in stateful autonomous AI agents through
+  cryptographic provenance, trust-weighted retrieval with temporal decay, and
+  semantic contradiction detection. Reported results are based on a custom
+  simulation harness and have not been independently peer reviewed.
